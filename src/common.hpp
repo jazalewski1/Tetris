@@ -3,6 +3,7 @@
 extern const float g_cellSize;
 extern const sf::Vector2i g_gridSize;
 extern const sf::Vector2u g_windowSize;
+extern const float g_PI;
 
 extern sf::Vector2i ftoi(sf::Vector2f pos);
 extern sf::Vector2i ftoi(float posX, float posY);
