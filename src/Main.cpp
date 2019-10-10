@@ -1,6 +1,7 @@
 #include "SFML/Graphics.hpp"
 #include "common.hpp"
 #include "block.hpp"
+#include "endscreen.hpp"
 #include "grid.hpp"
 #include "random.hpp"
 #include <iostream>
@@ -11,7 +12,7 @@
 const float g_cellSize {36};
 const sf::Vector2i g_windowCellCount {21, 24};
 const sf::Vector2u g_windowSize {static_cast<unsigned int>(g_cellSize * g_windowCellCount.x), static_cast<unsigned int>(g_cellSize * g_windowCellCount.y)};
-const float g_PI {3.14159265359};
+sf::Font g_font;
 
 using random = effolkronium::random_static;
 
@@ -28,6 +29,9 @@ namespace Game
 
 class Simulation : public sf::Drawable
 {
+	private:
+		enum class Mode {PLAY, GAMEOVER, NONE};
+
 	private:
 		Grid m_placeBoard;
 		Grid m_nextBoard;
@@ -47,7 +51,12 @@ class Simulation : public sf::Drawable
 		bool m_leftPressed;
 		bool m_rightPressed;
 
-		bool m_gameOver;
+		sf::RectangleShape m_topCover;
+
+		Mode m_mode;
+
+		EndScreen m_endscreen;
+		bool m_restart;
 
 	private:
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -58,7 +67,14 @@ class Simulation : public sf::Drawable
 			target.draw(*m_nextBlock, states);
 
 			for(const auto& cell : m_cells)
-				target.draw(cell.second);
+				target.draw(cell.second, states);
+
+			target.draw(m_topCover, states);
+
+			if(m_mode == Mode::GAMEOVER)
+			{
+				target.draw(m_endscreen, states);
+			}
 		}
 
 		void removeLevels()
@@ -110,79 +126,87 @@ class Simulation : public sf::Drawable
 
 	public:
 		Simulation() :
-			m_placeBoard{2, 2, 10, 20}, m_nextBoard{13, 2, 6, 4},
+			m_placeBoard{2, 2, 10, 20}, m_nextBoard{13, 4, 6, 4},
 			m_activeBlock{nullptr}, m_nextBlock{nullptr},
 			m_shapes{std::initializer_list{'I', 'J', 'L', 'O', 'S', 'T', 'Z'}},
 			m_lifetime{0}, m_updateFreq{60}, m_maxLevel{0},
 			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false},
-			m_gameOver{false}
+			m_topCover{itof(g_windowCellCount.x, 2)},
+			m_mode{Mode::PLAY}, m_restart{false}
 		{
 			m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
 			m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
+
 			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
-			m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
+			m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + m_placeBoard.getBorderLeft().y);
+
+			m_topCover.setFillColor(sf::Color::Black);
 		}
 
 		void update()
 		{
-			m_activeBlock->resetChecks();
-			m_activeBlock->checkWallsMovement();
-			m_activeBlock->checkCellsMovement(m_cells);
-
-			if(m_lifetime % m_updateFreq != 0)
+			if(m_mode == Mode::PLAY)
 			{
-				if(m_upPressed)
+				m_activeBlock->resetChecks();
+				m_activeBlock->checkWallsMovement();
+				m_activeBlock->checkCellsMovement(m_cells);
+
+				if(m_lifetime % m_updateFreq != 0)
 				{
-					m_activeBlock->rotateRight();
-					m_activeBlock->checkWallsRotation();
-					m_activeBlock->checkCellsRotation(m_cells);
-					m_upPressed = false;
+					if(m_upPressed)
+					{
+						m_activeBlock->rotateRight();
+						m_activeBlock->checkWallsRotation();
+						m_activeBlock->checkCellsRotation(m_cells);
+						m_upPressed = false;
+					}
+					if(m_downPressed)
+					{
+						m_activeBlock->steerDown();
+						m_downPressed = false;
+					}
+					if(m_leftPressed)
+					{
+						m_activeBlock->steerLeft();
+						m_leftPressed = false;
+					}
+					if(m_rightPressed)
+					{
+						m_activeBlock->steerRight();
+						m_rightPressed = false;
+					}
 				}
-				if(m_downPressed)
+				else
 				{
 					m_activeBlock->steerDown();
-					m_downPressed = false;
 				}
-				if(m_leftPressed)
+
+				if(m_activeBlock->hasStopped())
 				{
-					m_activeBlock->steerLeft();
-					m_leftPressed = false;
-				}
-				if(m_rightPressed)
-				{
-					m_activeBlock->steerRight();
-					m_rightPressed = false;
-				}
-			}
-			else
-			{
-				m_activeBlock->steerDown();
-			}
+					for(const auto& cell : m_activeBlock->getCells())
+						m_cells.emplace(cell.getIndex(), cell);
 
-			if(m_activeBlock->hasStopped())
-			{
-				for(const auto& cell : m_activeBlock->getCells())
-					m_cells.emplace(cell.getIndex(), cell);
+					for(const auto& cell : m_activeBlock->getCells())
+					{
+						int y {m_placeBoard.getBorderRight().y - cell.getIndex().y};
+						if(y > m_maxLevel)
+							m_maxLevel = y;
+					}
 
-				for(const auto& cell : m_activeBlock->getCells())
-				{
-					int y {m_placeBoard.getBorderRight().y - cell.getIndex().y};
-					if(y > m_maxLevel)
-						m_maxLevel = y;
+					m_activeBlock = std::make_unique<Block>(m_nextBlock->getShape(), &m_placeBoard);
+					m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
+
+					m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
+					m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
+
+					removeLevels();
+
+					if(m_maxLevel >= m_placeBoard.getSize().y)
+						m_mode = Mode::GAMEOVER;
 				}
 
-				m_activeBlock = std::make_unique<Block>(m_nextBlock->getShape(), &m_placeBoard);
-				m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
-				m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
-				m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
-
-				removeLevels();
-
-				if(m_maxLevel == m_placeBoard.getSize().y)
-					m_gameOver = true;
+				++m_lifetime;
 			}
-
-			++m_lifetime;
 		}
 
 		void keyPressed(sf::Keyboard::Key key)
@@ -196,6 +220,17 @@ class Simulation : public sf::Drawable
 			if(key == sf::Keyboard::Right)
 				m_rightPressed = true;
 		}
+
+		void mouseButtonPressed(sf::Vector2f pos)
+		{
+			if(m_mode == Mode::GAMEOVER)
+			{
+				if(m_endscreen.buttonPressed(pos))
+					m_restart = true;
+			}
+		}
+
+		bool restart() const { return m_restart; }
 };
 
 }
@@ -205,10 +240,17 @@ int main()
 	sf::RenderWindow window {sf::VideoMode{g_windowSize.x, g_windowSize.y}, "Tetris"};
 	window.setFramerateLimit(60);
 
-	Game::Simulation sim {};
+	g_font.loadFromFile("content/consola.ttf");
+
+	std::unique_ptr<Game::Simulation> sim {std::make_unique<Game::Simulation>()};
+	sf::Vector2i mousei;
+	sf::Vector2f mousef;
 
 	while(window.isOpen())
 	{
+		mousei = sf::Mouse::getPosition(window);
+		mousef = sf::Vector2f{mousei.x * 1.0f, mousei.y * 1.0f};
+
 		sf::Event event;
 		while(window.pollEvent(event))
 		{
@@ -220,14 +262,24 @@ int main()
 				if(event.key.code == sf::Keyboard::Escape)
 					window.close();
 
-				sim.keyPressed(event.key.code);
+				sim->keyPressed(event.key.code);
+			}
+
+			if(event.type == sf::Event::MouseButtonPressed)
+			{
+				if(event.mouseButton.button == sf::Mouse::Left)
+				{
+					sim->mouseButtonPressed(mousef);
+					if(sim->restart())
+						sim = std::make_unique<Game::Simulation>();
+				}
 			}
 		}
 
-		sim.update();
+		sim->update();
 
 		window.clear();
-		window.draw(sim);
+		window.draw(*sim);
 		window.display();
 	}
 

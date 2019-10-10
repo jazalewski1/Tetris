@@ -191,26 +191,14 @@ class Block : public sf::Drawable
 
 		void rotateRight()
 		{
+			float pi {3.14159265359};
 			m_rotation += 90;
 			for(auto& cell : m_cells)
 			{
 				sf::Vector2i offset {cell.getIndex() - m_center};
 				sf::Vector2f newOffset;
-				newOffset.x = ((offset.x * cos(90.0f * g_PI/180.0f)) - (offset.y * sin(90.0f * g_PI/180.0f)));
-				newOffset.y = ((offset.x * sin(90.0f * g_PI/180.0f)) + (offset.y * cos(90.0f * g_PI/180.0f)));
-				sf::Vector2i newIndex {m_center + sf::Vector2i{static_cast<int>(roundf(newOffset.x)), static_cast<int>(roundf(newOffset.y))}};
-				cell.setIndex(newIndex);
-			}
-		}
-		void rotateLeft()
-		{
-			m_rotation -= 90;
-			for(auto& cell : m_cells)
-			{
-				sf::Vector2i offset {cell.getIndex() - m_center};
-				sf::Vector2f newOffset;
-				newOffset.x = ((offset.x * cos(-90.0f * g_PI/180.0f)) - (offset.y * sin(-90.0f * g_PI/180.0f)));
-				newOffset.y = ((offset.x * sin(-90.0f * g_PI/180.0f)) + (offset.y * cos(-90.0f * g_PI/180.0f)));
+				newOffset.x = ((offset.x * cos(90.0f * pi/180.0f)) - (offset.y * sin(90.0f * pi/180.0f)));
+				newOffset.y = ((offset.x * sin(90.0f * pi/180.0f)) + (offset.y * cos(90.0f * pi/180.0f)));
 				sf::Vector2i newIndex {m_center + sf::Vector2i{static_cast<int>(roundf(newOffset.x)), static_cast<int>(roundf(newOffset.y))}};
 				cell.setIndex(newIndex);
 			}
