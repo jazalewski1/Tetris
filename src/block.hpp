@@ -77,57 +77,57 @@ class Block : public sf::Drawable
 
 		void makeI()
 		{
-			m_center = sf::Vector2i{5, -1};
-			for(int x = 3; x < 7; ++x)
-				m_cells.emplace_back(x, -1, sf::Color::Cyan);
+			m_center = sf::Vector2i{2, 0};
+			for(int x = 0; x < 4; ++x)
+				m_cells.emplace_back(x, 0, sf::Color::Cyan);
 		}
 		void makeJ()
 		{
-			m_center = sf::Vector2i{4, -1};
-			m_cells.emplace_back(3, -1, sf::Color::Blue);
-			m_cells.emplace_back(4, -1, sf::Color::Blue);
-			m_cells.emplace_back(5, -1, sf::Color::Blue);
-			m_cells.emplace_back(3, -2, sf::Color::Blue);
+			m_center = sf::Vector2i{1, 0};
+			m_cells.emplace_back(0, 0, sf::Color::Blue);
+			m_cells.emplace_back(1, 0, sf::Color::Blue);
+			m_cells.emplace_back(2, 0, sf::Color::Blue);
+			m_cells.emplace_back(0, -1, sf::Color::Blue);
 		}
 		void makeL()
 		{
-			m_center = sf::Vector2i{5, -1};
-			m_cells.emplace_back(4, -1, sf::Color{255, 153, 0});
-			m_cells.emplace_back(5, -1, sf::Color{255, 153, 0});
-			m_cells.emplace_back(6, -1, sf::Color{255, 153, 0});
-			m_cells.emplace_back(6, -2, sf::Color{255, 153, 0});
+			m_center = sf::Vector2i{2, 0};
+			m_cells.emplace_back(1, 0, sf::Color{255, 153, 0});
+			m_cells.emplace_back(2, 0, sf::Color{255, 153, 0});
+			m_cells.emplace_back(3, 0, sf::Color{255, 153, 0});
+			m_cells.emplace_back(3, -1, sf::Color{255, 153, 0});
 		}
 		void makeO()
 		{
-			m_center = sf::Vector2i{5, -1};
-			m_cells.emplace_back(4, -1, sf::Color::Yellow);
-			m_cells.emplace_back(5, -1, sf::Color::Yellow);
-			m_cells.emplace_back(4, -2, sf::Color::Yellow);
-			m_cells.emplace_back(5, -2, sf::Color::Yellow);
+			m_center = sf::Vector2i{0, 0};
+			m_cells.emplace_back(0, 0, sf::Color::Yellow);
+			m_cells.emplace_back(1, 0, sf::Color::Yellow);
+			m_cells.emplace_back(0, -1, sf::Color::Yellow);
+			m_cells.emplace_back(1, -1, sf::Color::Yellow);
 		}
 		void makeS()
 		{
-			m_center = sf::Vector2i{5, -1};
-			m_cells.emplace_back(4, -1, sf::Color::Green);
-			m_cells.emplace_back(5, -1, sf::Color::Green);
-			m_cells.emplace_back(5, -2, sf::Color::Green);
-			m_cells.emplace_back(6, -2, sf::Color::Green);
+			m_center = sf::Vector2i{2, 0};
+			m_cells.emplace_back(1, 0, sf::Color::Green);
+			m_cells.emplace_back(2, 0, sf::Color::Green);
+			m_cells.emplace_back(2, -1, sf::Color::Green);
+			m_cells.emplace_back(3, -1, sf::Color::Green);
 		}
 		void makeT()
 		{
-			m_center = sf::Vector2i{5, -1};
-			m_cells.emplace_back(4, -1, sf::Color{136, 0, 255});
-			m_cells.emplace_back(5, -1, sf::Color{136, 0, 255});
-			m_cells.emplace_back(6, -1, sf::Color{136, 0, 255});
-			m_cells.emplace_back(5, -2, sf::Color{136, 0, 255});
+			m_center = sf::Vector2i{2, 0};
+			m_cells.emplace_back(1, 0, sf::Color{136, 0, 255});
+			m_cells.emplace_back(2, 0, sf::Color{136, 0, 255});
+			m_cells.emplace_back(3, 0, sf::Color{136, 0, 255});
+			m_cells.emplace_back(2, -1, sf::Color{136, 0, 255});
 		}
 		void makeZ()
 		{
-			m_center = sf::Vector2i{4, -1};
-			m_cells.emplace_back(3, -2, sf::Color::Red);
-			m_cells.emplace_back(4, -2, sf::Color::Red);
-			m_cells.emplace_back(4, -1, sf::Color::Red);
-			m_cells.emplace_back(5, -1, sf::Color::Red);
+			m_center = sf::Vector2i{1, 0};
+			m_cells.emplace_back(0, -1, sf::Color::Red);
+			m_cells.emplace_back(1, -1, sf::Color::Red);
+			m_cells.emplace_back(1, 0, sf::Color::Red);
+			m_cells.emplace_back(2, 0, sf::Color::Red);
 		}
 
 		void moveUp()
@@ -170,7 +170,7 @@ class Block : public sf::Drawable
 	public:
 		Block(char shape, const Grid* board) :
 			m_rotation{0}, m_shape{shape},
-			m_board{board}, m_boardOffset{board->getBorderLeft()},
+			m_board{board},
 			m_canMoveUp{true}, m_canMoveDown{true}, m_canMoveLeft{true}, m_canMoveRight{true},
 			m_canRotateLeft{true}, m_canRotateRight{true},
 			m_hasStopped{false}
@@ -186,10 +186,6 @@ class Block : public sf::Drawable
 				case 'Z': makeZ(); break;
 				default: break;
 			}
-
-			m_center += m_boardOffset;
-			for(auto& cell : m_cells)
-				cell.setIndex(cell.getIndex() + m_boardOffset);
 		}
 
 		void rotateRight()
@@ -315,6 +311,14 @@ class Block : public sf::Drawable
 			}
 
 		}
+
+		void move(sf::Vector2i offset)
+		{
+			m_center += offset;
+			for(auto& cell : m_cells)
+				cell.setIndex(cell.getIndex() + offset);
+		}
+		void move(int offsetX, int offsetY) { move(sf::Vector2i{offsetX, offsetY}); }
 
 		const std::vector<Cell>& getCells() const { return m_cells; }
 		char getShape() const { return m_shape; }

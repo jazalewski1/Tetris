@@ -8,7 +8,7 @@
 
 
 const float g_cellSize {36};
-const sf::Vector2i g_windowCellCount {20, 24};
+const sf::Vector2i g_windowCellCount {21, 24};
 const sf::Vector2u g_windowSize {static_cast<unsigned int>(g_cellSize * g_windowCellCount.x), static_cast<unsigned int>(g_cellSize * g_windowCellCount.y)};
 const float g_PI {3.14159265359};
 
@@ -29,7 +29,9 @@ class Simulation : public sf::Drawable
 {
 	private:
 		Grid m_placeBoard;
+		Grid m_nextBoard;
 		std::unique_ptr<Block> m_activeBlock;
+		std::unique_ptr<Block> m_nextBlock;
 
 		std::vector<char> m_shapes;
 
@@ -47,7 +49,9 @@ class Simulation : public sf::Drawable
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const
 		{
 			target.draw(m_placeBoard, states);
+			target.draw(m_nextBoard, states);
 			target.draw(*m_activeBlock, states);
+			target.draw(*m_nextBlock, states);
 
 			for(const auto& cell : m_cells)
 				target.draw(cell);
@@ -55,13 +59,16 @@ class Simulation : public sf::Drawable
 
 	public:
 		Simulation() :
-			m_placeBoard{2, 2, 10, 20},
-			m_activeBlock{nullptr},
+			m_placeBoard{2, 2, 10, 20}, m_nextBoard{13, 2, 6, 4},
+			m_activeBlock{nullptr}, m_nextBlock{nullptr},
 			m_shapes{std::initializer_list{'I', 'J', 'L', 'O', 'S', 'T', 'Z'}},
 			m_lifetime{0}, m_updateFreq{60},
 			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false}
 		{
+			m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
+			m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
 			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
+			m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
 		}
 
 		void update()
@@ -104,7 +111,10 @@ class Simulation : public sf::Drawable
 			{
 				for(const auto& cell : m_activeBlock->getCells())
 					m_cells.push_back(cell);
-				m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
+				m_activeBlock = std::make_unique<Block>(m_nextBlock->getShape(), &m_placeBoard);
+				m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
+				m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
+				m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
 			}
 
 			++m_lifetime;
