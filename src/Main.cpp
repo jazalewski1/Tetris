@@ -65,6 +65,10 @@ class Simulation : public sf::Drawable
 
 		void update()
 		{
+			m_activeBlock->resetChecks();
+			m_activeBlock->checkWallsMovement();
+			m_activeBlock->checkCellsMovement(m_cells);
+
 			if(m_lifetime % m_updateFreq != 0)
 			{
 				if(m_upPressed)
@@ -89,10 +93,6 @@ class Simulation : public sf::Drawable
 					m_rightPressed = false;
 					m_activeBlock->steerRight();
 				}
-
-				m_activeBlock->resetChecks();
-				m_activeBlock->checkWallsMovement();
-				m_activeBlock->checkCellsMovement(m_cells);
 			}
 			else
 			{
