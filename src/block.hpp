@@ -85,10 +85,10 @@ class Block : public sf::Drawable
 		void makeJ()
 		{
 			m_center = sf::Vector2i{1, 0};
-			m_cells.emplace_back(0, 0, sf::Color::Blue);
-			m_cells.emplace_back(1, 0, sf::Color::Blue);
-			m_cells.emplace_back(2, 0, sf::Color::Blue);
-			m_cells.emplace_back(0, -1, sf::Color::Blue);
+			m_cells.emplace_back(0, 0, sf::Color{0, 68, 255});
+			m_cells.emplace_back(1, 0, sf::Color{0, 68, 255});
+			m_cells.emplace_back(2, 0, sf::Color{0, 68, 255});
+			m_cells.emplace_back(0, -1, sf::Color{0, 68, 255});
 		}
 		void makeL()
 		{
@@ -100,11 +100,11 @@ class Block : public sf::Drawable
 		}
 		void makeO()
 		{
-			m_center = sf::Vector2i{0, 0};
-			m_cells.emplace_back(0, 0, sf::Color::Yellow);
+			m_center = sf::Vector2i{1, 0};
 			m_cells.emplace_back(1, 0, sf::Color::Yellow);
-			m_cells.emplace_back(0, -1, sf::Color::Yellow);
+			m_cells.emplace_back(2, 0, sf::Color::Yellow);
 			m_cells.emplace_back(1, -1, sf::Color::Yellow);
+			m_cells.emplace_back(2, -1, sf::Color::Yellow);
 		}
 		void makeS()
 		{
