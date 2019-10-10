@@ -16,6 +16,7 @@ class Grid : public sf::Drawable
 		std::vector<sf::RectangleShape> m_arr;
 		sf::Vector2i m_borderLeft;
 		sf::Vector2i m_borderRight;
+		sf::Vector2i m_size;
 
 	private:
 		virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -26,7 +27,8 @@ class Grid : public sf::Drawable
 
 	public:
 		Grid(sf::Vector2i offset, sf::Vector2i size) :
-			m_borderLeft{offset}, m_borderRight{offset + size}
+			m_borderLeft{offset}, m_borderRight{offset + size},
+			m_size{size}
 		{
 			sf::RectangleShape rect {sf::Vector2f{g_cellSize, g_cellSize}};
 			rect.setOutlineColor(sf::Color{255, 255, 255, 30});
@@ -49,6 +51,7 @@ class Grid : public sf::Drawable
 
 		sf::Vector2i getBorderRight() const { return m_borderRight; }
 		sf::Vector2i getBorderLeft() const { return m_borderLeft; }
+		sf::Vector2i getSize() const { return m_size; }
 };
 
 }

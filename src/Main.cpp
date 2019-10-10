@@ -5,6 +5,7 @@
 #include "random.hpp"
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 
 
 const float g_cellSize {36};
@@ -35,15 +36,18 @@ class Simulation : public sf::Drawable
 
 		std::vector<char> m_shapes;
 
-		std::vector<Cell> m_cells;
+		std::unordered_map<sf::Vector2i, Cell> m_cells;
 
 		int m_lifetime;
 		int m_updateFreq;
+		int m_maxLevel;
 
 		bool m_upPressed;
 		bool m_downPressed;
 		bool m_leftPressed;
 		bool m_rightPressed;
+
+		bool m_gameOver;
 
 	private:
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -54,7 +58,54 @@ class Simulation : public sf::Drawable
 			target.draw(*m_nextBlock, states);
 
 			for(const auto& cell : m_cells)
-				target.draw(cell);
+				target.draw(cell.second);
+		}
+
+		void removeLevels()
+		{
+			for(int baseLevel = 0; baseLevel < m_maxLevel; ++baseLevel)
+			{
+				sf::Vector2i boardOffset {m_placeBoard.getBorderLeft().x, m_placeBoard.getBorderRight().y - 1};
+				int counter {0};
+
+				for(int x = 0; x < m_placeBoard.getSize().x; ++x)
+				{
+					sf::Vector2i index {boardOffset.x + x, boardOffset.y - baseLevel};
+					if(m_cells.find(index) != m_cells.end())
+						++counter;
+					else
+						break;
+				}
+
+				if(counter == m_placeBoard.getSize().x)
+				{
+					for(int x = 0; x < m_placeBoard.getSize().x; ++x)
+					{
+						sf::Vector2i index {boardOffset.x + x, boardOffset.y - baseLevel};
+						m_cells.erase(index);
+					}
+
+					for(int y = baseLevel + 1; y < m_maxLevel; ++y)
+					{
+						for(int x = 0; x < m_placeBoard.getSize().x; ++x)
+						{
+							sf::Vector2i index {boardOffset.x + x, boardOffset.y - y};
+							auto search {m_cells.find(index)};
+							if(search != m_cells.end())
+							{
+								sf::Vector2i newIndex {index.x, index.y + 1};
+								search->second.setIndex(newIndex);
+								auto nh {m_cells.extract(index)};
+								nh.key() = newIndex;
+								m_cells.insert(std::move(nh));
+							}
+						}
+					}
+
+					--baseLevel;
+					--m_maxLevel;
+				}
+			}
 		}
 
 	public:
@@ -62,8 +113,9 @@ class Simulation : public sf::Drawable
 			m_placeBoard{2, 2, 10, 20}, m_nextBoard{13, 2, 6, 4},
 			m_activeBlock{nullptr}, m_nextBlock{nullptr},
 			m_shapes{std::initializer_list{'I', 'J', 'L', 'O', 'S', 'T', 'Z'}},
-			m_lifetime{0}, m_updateFreq{60},
-			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false}
+			m_lifetime{0}, m_updateFreq{60}, m_maxLevel{0},
+			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false},
+			m_gameOver{false}
 		{
 			m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
 			m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
@@ -110,11 +162,24 @@ class Simulation : public sf::Drawable
 			if(m_activeBlock->hasStopped())
 			{
 				for(const auto& cell : m_activeBlock->getCells())
-					m_cells.push_back(cell);
+					m_cells.emplace(cell.getIndex(), cell);
+
+				for(const auto& cell : m_activeBlock->getCells())
+				{
+					int y {m_placeBoard.getBorderRight().y - cell.getIndex().y};
+					if(y > m_maxLevel)
+						m_maxLevel = y;
+				}
+
 				m_activeBlock = std::make_unique<Block>(m_nextBlock->getShape(), &m_placeBoard);
 				m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
 				m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
 				m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
+
+				removeLevels();
+
+				if(m_maxLevel == m_placeBoard.getSize().y)
+					m_gameOver = true;
 			}
 
 			++m_lifetime;

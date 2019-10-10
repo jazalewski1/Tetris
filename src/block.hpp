@@ -5,6 +5,7 @@
 #include "common.hpp"
 #include "grid.hpp"
 #include "sfutils.hpp"
+#include <unordered_map>
 #include <vector>
 
 namespace Game
@@ -257,13 +258,13 @@ class Block : public sf::Drawable
 				}
 			}
 		}
-		void checkCellsMovement(const std::vector<Cell>& otherCells)
+		void checkCellsMovement(const std::unordered_map<sf::Vector2i, Cell>& otherCells)
 		{
 			for(const auto& cell : m_cells)
 			{
 				for(const auto& otherCell : otherCells)
 				{
-					sf::Vector2i diff {cell.getIndex() - otherCell.getIndex()};
+					sf::Vector2i diff {cell.getIndex() - otherCell.second.getIndex()};
 					if(diff.y == 1 && diff.x == 0)
 						m_canMoveUp = false;
 					if(diff.y == -1 && diff.x == 0)
@@ -290,13 +291,13 @@ class Block : public sf::Drawable
 					moveRight();
 			}
 		}
-		void checkCellsRotation(const std::vector<Cell>& otherCells)
+		void checkCellsRotation(const std::unordered_map<sf::Vector2i, Cell>& otherCells)
 		{
 			for(const auto& cell : m_cells)
 			{
 				for(const auto& otherCell : otherCells)
 				{
-					while(cell.getIndex() == otherCell.getIndex())
+					while(cell.getIndex() == otherCell.second.getIndex())
 					{
 						if(m_canMoveLeft)
 							moveLeft();
