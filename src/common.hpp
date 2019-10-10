@@ -1,7 +1,7 @@
 #include "SFML/Graphics.hpp"
 
 extern const float g_cellSize;
-extern const sf::Vector2i g_gridSize;
+extern const sf::Vector2i g_windowCellCount;
 extern const sf::Vector2u g_windowSize;
 extern const float g_PI;
 

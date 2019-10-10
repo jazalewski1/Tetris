@@ -8,8 +8,8 @@
 
 
 const float g_cellSize {36};
-const sf::Vector2i g_gridSize {10, 20};
-const sf::Vector2u g_windowSize {static_cast<unsigned int>(g_cellSize * g_gridSize.x), static_cast<unsigned int>(g_cellSize * g_gridSize.y)};
+const sf::Vector2i g_windowCellCount {20, 24};
+const sf::Vector2u g_windowSize {static_cast<unsigned int>(g_cellSize * g_windowCellCount.x), static_cast<unsigned int>(g_cellSize * g_windowCellCount.y)};
 const float g_PI {3.14159265359};
 
 using random = effolkronium::random_static;
@@ -28,7 +28,7 @@ namespace Game
 class Simulation : public sf::Drawable
 {
 	private:
-		Grid m_grid;
+		Grid m_placeBoard;
 		std::unique_ptr<Block> m_activeBlock;
 
 		std::vector<char> m_shapes;
@@ -46,7 +46,7 @@ class Simulation : public sf::Drawable
 	private:
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const
 		{
-			target.draw(m_grid, states);
+			target.draw(m_placeBoard, states);
 			target.draw(*m_activeBlock, states);
 
 			for(const auto& cell : m_cells)
@@ -55,12 +55,13 @@ class Simulation : public sf::Drawable
 
 	public:
 		Simulation() :
+			m_placeBoard{2, 2, 10, 20},
 			m_activeBlock{nullptr},
 			m_shapes{std::initializer_list{'I', 'J', 'L', 'O', 'S', 'T', 'Z'}},
 			m_lifetime{0}, m_updateFreq{60},
 			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false}
 		{
-			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()));
+			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
 		}
 
 		void update()
@@ -73,25 +74,25 @@ class Simulation : public sf::Drawable
 			{
 				if(m_upPressed)
 				{
-					m_upPressed = false;
 					m_activeBlock->rotateRight();
 					m_activeBlock->checkWallsRotation();
 					m_activeBlock->checkCellsRotation(m_cells);
+					m_upPressed = false;
 				}
 				if(m_downPressed)
 				{
-					m_downPressed = false;
 					m_activeBlock->steerDown();
+					m_downPressed = false;
 				}
 				if(m_leftPressed)
 				{
-					m_leftPressed = false;
 					m_activeBlock->steerLeft();
+					m_leftPressed = false;
 				}
 				if(m_rightPressed)
 				{
-					m_rightPressed = false;
 					m_activeBlock->steerRight();
+					m_rightPressed = false;
 				}
 			}
 			else
@@ -103,7 +104,7 @@ class Simulation : public sf::Drawable
 			{
 				for(const auto& cell : m_activeBlock->getCells())
 					m_cells.push_back(cell);
-				m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()));
+				m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
 			}
 
 			++m_lifetime;

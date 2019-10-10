@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "common.hpp"
+#include "grid.hpp"
 #include "sfutils.hpp"
 #include <vector>
 
@@ -53,7 +54,10 @@ class Block : public sf::Drawable
 		std::vector<Cell> m_cells;
 		int m_rotation;
 		sf::Vector2i m_center;
-		char m_type;
+		char m_shape;
+
+		const Grid* m_board;
+		sf::Vector2i m_boardOffset;
 
 		bool m_canMoveUp;
 		bool m_canMoveDown;
@@ -164,13 +168,14 @@ class Block : public sf::Drawable
 		}
 
 	public:
-		Block(char type) :
-			m_rotation{0}, m_type{type},
+		Block(char shape, const Grid* board) :
+			m_rotation{0}, m_shape{shape},
+			m_board{board}, m_boardOffset{board->getBorderLeft()},
 			m_canMoveUp{true}, m_canMoveDown{true}, m_canMoveLeft{true}, m_canMoveRight{true},
 			m_canRotateLeft{true}, m_canRotateRight{true},
 			m_hasStopped{false}
 		{
-			switch(m_type)
+			switch(m_shape)
 			{
 				case 'I': makeI(); break;
 				case 'J': makeJ(); break;
@@ -181,6 +186,10 @@ class Block : public sf::Drawable
 				case 'Z': makeZ(); break;
 				default: break;
 			}
+
+			m_center += m_boardOffset;
+			for(auto& cell : m_cells)
+				cell.setIndex(cell.getIndex() + m_boardOffset);
 		}
 
 		void rotateRight()
@@ -227,7 +236,7 @@ class Block : public sf::Drawable
 		{
 			for(const auto& cell : m_cells)
 			{
-				while(cell.getIndex().y + 1 >= g_gridSize.y)
+				while(cell.getIndex().y + 1 >= m_board->getBorderRight().y)
 				{
 					m_canMoveDown = false;
 					break;
@@ -237,7 +246,7 @@ class Block : public sf::Drawable
 				m_hasStopped = true;
 			for(const auto& cell : m_cells)
 			{
-				while(cell.getIndex().x - 1 < 0)
+				while(cell.getIndex().x - 1 < m_board->getBorderLeft().x)
 				{
 					m_canMoveLeft = false;
 					break;
@@ -245,7 +254,7 @@ class Block : public sf::Drawable
 			}
 			for(const auto& cell : m_cells)
 			{
-				while(cell.getIndex().x + 1 >= g_gridSize.x)
+				while(cell.getIndex().x + 1 >= m_board->getBorderRight().x)
 				{
 					m_canMoveRight = false;
 					break;
@@ -277,11 +286,11 @@ class Block : public sf::Drawable
 		{
 			for(const auto& cell : m_cells)
 			{
-				while(cell.getIndex().y >= g_gridSize.y)
+				while(cell.getIndex().y >= m_board->getBorderRight().y)
 					moveUp();
-				while(cell.getIndex().x >= g_gridSize.x)
+				while(cell.getIndex().x >= m_board->getBorderRight().x)
 					moveLeft();
-				while(cell.getIndex().x < 0)
+				while(cell.getIndex().x < m_board->getBorderLeft().x)
 					moveRight();
 			}
 		}
@@ -308,6 +317,7 @@ class Block : public sf::Drawable
 		}
 
 		const std::vector<Cell>& getCells() const { return m_cells; }
+		char getShape() const { return m_shape; }
 };
 
 
