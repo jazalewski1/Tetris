@@ -36,6 +36,7 @@ class Simulation : public sf::Drawable
 		Grid m_placeBoard;
 		Grid m_nextBoard;
 		std::unique_ptr<Block> m_activeBlock;
+		std::unique_ptr<GhostBlock> m_ghostBlock;
 		std::unique_ptr<Block> m_nextBlock;
 
 		std::vector<char> m_shapes;
@@ -64,6 +65,7 @@ class Simulation : public sf::Drawable
 			target.draw(m_placeBoard, states);
 			target.draw(m_nextBoard, states);
 			target.draw(*m_activeBlock, states);
+			target.draw(*m_ghostBlock, states);
 			target.draw(*m_nextBlock, states);
 
 			for(const auto& cell : m_cells)
@@ -127,7 +129,7 @@ class Simulation : public sf::Drawable
 	public:
 		Simulation() :
 			m_placeBoard{2, 2, 10, 20}, m_nextBoard{13, 4, 6, 4},
-			m_activeBlock{nullptr}, m_nextBlock{nullptr},
+			m_activeBlock{nullptr}, m_ghostBlock{nullptr}, m_nextBlock{nullptr},
 			m_shapes{std::initializer_list{'I', 'J', 'L', 'O', 'S', 'T', 'Z'}},
 			m_lifetime{0}, m_updateFreq{60}, m_maxLevel{0},
 			m_upPressed{false}, m_downPressed{false}, m_leftPressed{false}, m_rightPressed{false},
@@ -139,6 +141,8 @@ class Simulation : public sf::Drawable
 
 			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
 			m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + m_placeBoard.getBorderLeft().y);
+
+			m_ghostBlock = std::make_unique<GhostBlock>(m_activeBlock.get());
 
 			m_topCover.setFillColor(sf::Color::Black);
 		}
@@ -175,11 +179,24 @@ class Simulation : public sf::Drawable
 						m_activeBlock->steerRight();
 						m_rightPressed = false;
 					}
+
 				}
 				else
 				{
 					m_activeBlock->steerDown();
 				}
+
+				m_ghostBlock = std::make_unique<GhostBlock>(m_activeBlock.get());
+
+				for(int i = 0; i < m_placeBoard.getSize().y; ++i)
+				{
+					m_ghostBlock->resetChecks();
+					m_ghostBlock->checkWallsMovement();
+					m_ghostBlock->checkCellsMovement(m_cells);
+
+					m_ghostBlock->steerDown();
+				}
+
 
 				if(m_activeBlock->hasStopped())
 				{
@@ -194,7 +211,9 @@ class Simulation : public sf::Drawable
 					}
 
 					m_activeBlock = std::make_unique<Block>(m_nextBlock->getShape(), &m_placeBoard);
-					m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + + m_placeBoard.getBorderLeft().y);
+					m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + m_placeBoard.getBorderLeft().y);
+
+					m_ghostBlock = std::make_unique<GhostBlock>(m_activeBlock.get());
 
 					m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
 					m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);

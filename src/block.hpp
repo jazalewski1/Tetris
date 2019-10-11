@@ -44,14 +44,17 @@ class Cell : public sf::Drawable
 		}
 		void setIndex(int indexX, int indexY) { setIndex(sf::Vector2i{indexX, indexY}); }
 
+		void setColor(sf::Color color) { m_shape.setFillColor(color); }
+
 
 		sf::Vector2i getIndex() const { return m_index; }
+		sf::Color getColor() const { return m_shape.getFillColor(); }
 };
 
 
 class Block : public sf::Drawable
 {
-	private:
+	protected:
 		std::vector<Cell> m_cells;
 		int m_rotation;
 		sf::Vector2i m_center;
@@ -69,7 +72,7 @@ class Block : public sf::Drawable
 
 		bool m_hasStopped;
 
-	private:
+	protected:
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const
 		{
 			for(const auto& cell : m_cells)
@@ -311,6 +314,22 @@ class Block : public sf::Drawable
 
 		const std::vector<Cell>& getCells() const { return m_cells; }
 		char getShape() const { return m_shape; }
+		const Grid* getBoard() const { return m_board; }
+};
+
+class GhostBlock : public Block
+{
+	public:
+		GhostBlock(const Block* parent) :
+			Block{*parent}
+		{
+			for(auto& cell : m_cells)
+			{
+				sf::Color color {cell.getColor()};
+				color.a = 80;
+				cell.setColor(color);
+			}
+		}
 };
 
 
