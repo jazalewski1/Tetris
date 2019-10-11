@@ -139,7 +139,7 @@ class Simulation : public sf::Drawable
 			m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
 			m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
 
-			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_placeBoard);
+			m_activeBlock = std::make_unique<Block>(*random::get(m_shapes), &m_placeBoard);
 			m_activeBlock->move(3 + m_placeBoard.getBorderLeft().x, -1 + m_placeBoard.getBorderLeft().y);
 
 			m_ghostBlock = std::make_unique<GhostBlock>(m_activeBlock.get());
@@ -215,7 +215,7 @@ class Simulation : public sf::Drawable
 
 					m_ghostBlock = std::make_unique<GhostBlock>(m_activeBlock.get());
 
-					m_nextBlock = std::make_unique<Block>(*random::get(m_shapes.begin(), m_shapes.end()), &m_nextBoard);
+					m_nextBlock = std::make_unique<Block>(*random::get(m_shapes), &m_nextBoard);
 					m_nextBlock->move(1 + m_nextBoard.getBorderLeft().x, 2 + m_nextBoard.getBorderLeft().y);
 
 					removeLevels();
