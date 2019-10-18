@@ -1,2 +1,2 @@
-# Template SFML Project
-### empty
+# TETRIS
+### Tetris Game in C++ SFML
